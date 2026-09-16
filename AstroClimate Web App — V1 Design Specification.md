@@ -1038,23 +1038,65 @@ Later this could become:
 
 The UI can use Open-Meteo's geocoding endpoint for city and postal-code searches. Its current API returns coordinates, timezone-related geographic information, administrative areas, and other location metadata.
 
-For V1, however, I would support two location types:
+The geocoding response carries latitude, longitude, elevation **and** an IANA
+timezone — exactly the fields a location record needs, so a search hit is usable
+directly without a second lookup.
 
-```text
-Precomputed locations
-Custom temporary location
-```
+### Three tiers
 
-Precomputed locations have full historical climatology.
+**Tier 1 — anywhere on Earth, instantly.** Astronomy is pure computation and the
+forecast API is global, so a searched location is fully functional for tonight
+the moment it is chosen. Only the thirty-year history is missing. *(Built.)*
 
-A custom location can immediately receive:
+**Tier 2 — climatology computed on demand in the browser.** *(Not built.)*
+Nothing about the preprocessing actually requires a server. Measured against the
+live API:
 
-```text
-astronomical calculations
-current forecast
-```
+| | |
+|---|---|
+| CORS on archive, forecast and geocoding | `access-control-allow-origin: *` |
+| 30 years × 9 vars as **one** request | 600 s, 13.7 MB — never do this |
+| 30 years, year-chunked, 6 requests in parallel | **51 s, 2.7 MB gzipped** |
+| Same, 6 vars and `models=era5` | **16 s, 2.2 MB** |
+| Repeat request for a cell already seen | roughly twice as fast |
+| 10,950 night windows in JavaScript | **1.6 s** (0.15 ms each) |
 
-but historical climatology requires preprocessing.
+So a brand-new location costs roughly 20–60 seconds in a Web Worker, once, then
+persists in IndexedDB. That is a progress bar, not a blocker.
+
+The default should be the slim profile — 30 years, 6 variables, `models=era5` —
+with an offer to refetch at full parity afterwards. Getting a usable answer in
+16 seconds matters more than matching the precomputed files exactly on first
+sight.
+
+**Tier 3 — promote to precomputed.** Locations worth returning to go into
+`locations.yaml` and are baked by the Action, so they load instantly and cost no
+API budget.
+
+### Key the cache by grid cell, not by location
+
+ERA5's cloud grid is 0.25°. This was measured, not assumed: Schererville and
+Highland are **9 km apart and return byte-identical cloud series**; Gary at 19 km
+differs. Keying on-demand climatology by ERA5 cell rather than by place means
+every town within about 14 km shares one cached result and one slice of the API
+budget. Astronomy still uses exact coordinates, because that part is continuous.
+
+This matters because 30 years × 9 variables costs roughly 780 of the 10,000
+daily call-units, so an IP gets about a dozen genuinely new cells per day.
+Grid-keyed caching turns "a dozen locations" into "a dozen regions".
+
+### The risk Tier 2 introduces
+
+If the browser computes climatology, the aggregation exists in both Python and
+TypeScript, and two implementations of "P(≥3 consecutive clear hours)" will
+drift. The failure is silent: a precomputed location and an on-demand one
+disagreeing by a few points, with no error anywhere.
+
+**The resolution is to make TypeScript canonical** and run it under Node for the
+batch path too, retiring the Python pipeline. Astronomy Engine is already
+identical across both languages, the aggregation is a few hundred lines of
+straightforward numeric work, and JavaScript computed the night windows 13×
+faster than the pandas version. One implementation cannot disagree with itself.
 
 ---
 
@@ -1440,6 +1482,13 @@ and published it in the provenance panel.
 - the ±7-day window makes the annual curve smooth by construction
 - the §16 comparison table must not invite subtracting a historical score from a
   forecast score
+
+### Added after the first build
+
+**§22 now specifies how arbitrary locations work.** 1.0 named the two location
+types without saying how a custom one could ever gain history. The tiered design
+above, the measured feasibility of computing climatology in the browser, the
+grid-cell cache key, and the decision to make TypeScript canonical are all new.
 
 ### Unchanged
 

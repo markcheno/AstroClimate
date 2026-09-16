@@ -47,6 +47,28 @@ scripts itself and does not depend on `just`.
 
 ---
 
+## Any location
+
+Search for any town or postal code and you immediately get **astronomical
+darkness, Moon phase, moon-free darkness and tonight's forecast** — astronomy is
+pure computation and the forecast API is global, so neither needs preprocessing.
+
+What a searched location does *not* get is the thirty-year history. That still
+requires a build. Two ways to close the gap:
+
+- **Add it permanently** — put it in `locations.yaml`, run `just build <id>`, and
+  it becomes instant for everyone (below).
+- **Compute it in the browser** — not built yet, but measured and practical:
+  year-chunked parallel requests fetch 30 years in 16–51 s, and the night
+  windows compute in 1.6 s of JavaScript. See §22 of the spec for the design.
+
+ERA5's cloud grid is 0.25°, which is worth knowing before you add anything:
+Schererville and Highland are 9 km apart and return **byte-identical** cloud
+series. If you already have a location built, anywhere within ~14 km of it has
+the same cloud history, and building the neighbour gains you nothing.
+
+---
+
 ## Adding a location
 
 Append to `locations/locations.yaml`:
@@ -180,12 +202,12 @@ The full design rationale is in
 
 ## Status
 
-Working: the preprocessing pipeline, one built location, the annual chart, the
-score with all five activity modes and its breakdown, darkness and Moon, and the
-provenance panel.
+Working: the preprocessing pipeline, one built location, location search for
+anywhere on Earth, the annual chart, the score with all five activity modes and
+its breakdown, darkness and Moon, the current forecast, and the provenance panel.
 
 Not built yet: calendar heatmap, date detail screen, hour-of-night chart,
-location comparison, current forecast, PWA.
+location comparison, on-demand climatology in the browser, PWA.
 
 ---
 
