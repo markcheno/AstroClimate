@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-09-16T01:40:25Z",
+  "generated_at": "2026-09-16T02:16:45Z",
   "locations": [
     {
       "id": "schererville-in",
@@ -12,6 +12,17 @@
       "timezone": "America/Chicago",
       "file": "locations/schererville-in.json",
       "bytes": 252433
+    },
+    {
+      "id": "holland-mi",
+      "name": "Holland, Michigan",
+      "label_short": "Holland",
+      "latitude": 42.7875,
+      "longitude": -86.1089,
+      "elevation_m": 187.0,
+      "timezone": "America/Detroit",
+      "file": "locations/holland-mi.json",
+      "bytes": 252708
     }
   ]
 }
