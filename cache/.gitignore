@@ -1,0 +1,4 @@
+# Raw ERA5 downloads are large and reproducible; never commit them.
+# Only the derived climatology JSON under app/public/data/ is deployed.
+*
+!.gitignore

@@ -1,0 +1,34 @@
+# Observing locations with precomputed historical climatology.
+#
+# Adding a location:
+#   1. append an entry below
+#   2. uv run python scripts/build_location.py <id>
+#   3. commit the generated app/public/data/locations/<id>.json
+#
+# Or edit this file on main and let .github/workflows/update-data.yml do it.
+#
+# id            slug; also the JSON filename and the cache/ subdirectory
+# name          display name
+# latitude      decimal degrees, north positive
+# longitude     decimal degrees, east positive
+# elevation_m   metres above sea level (affects twilight times slightly)
+# timezone      IANA zone; used to key each night to its evening calendar date
+# label_short   optional short header for the location-comparison table
+
+locations:
+
+  - id: schererville-in
+    name: Schererville, Indiana
+    latitude: 41.4789
+    longitude: -87.4548
+    elevation_m: 200
+    timezone: America/Chicago
+    label_short: Schererville
+
+  - id: holland-mi
+    name: Holland, Michigan
+    latitude: 42.7875
+    longitude: -86.1089
+    elevation_m: 187
+    timezone: America/Detroit
+    label_short: Holland

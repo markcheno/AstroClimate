@@ -1,0 +1,73 @@
+name: Update Location Data
+
+# Rebuilds the historical climatology and commits the result to main. The push
+# triggers deploy.yml, which publishes. This workflow deliberately does NOT
+# deploy Pages itself.
+on:
+  workflow_dispatch:
+    inputs:
+      location:
+        description: 'Location id to rebuild (blank = all)'
+        required: false
+        default: ''
+      force:
+        description: 'Re-download cached years'
+        type: boolean
+        required: false
+        default: false
+  schedule:
+    # 04:17 UTC on the 3rd of each month. ERA5 lags real time by ~5 days, so a
+    # run early in the month picks up the previous month in full.
+    - cron: '17 4 3 * *'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-data
+  cancel-in-progress: false
+
+jobs:
+  rebuild:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Restore raw ERA5 cache
+        # Without this every monthly run re-downloads three decades of hourly
+        # data. The key rolls monthly so new years are appended; restore-keys
+        # falls back to the newest previous cache rather than starting empty.
+        uses: actions/cache@v4
+        with:
+          path: cache
+          key: era5-${{ hashFiles('locations/locations.yaml') }}-${{ github.run_id }}
+          restore-keys: |
+            era5-${{ hashFiles('locations/locations.yaml') }}-
+            era5-
+
+      - name: Build climatology
+        run: |
+          if [ -n "${{ inputs.location }}" ]; then
+            uv run python scripts/build_location.py "${{ inputs.location }}" ${{ inputs.force && '--force' || '' }}
+          else
+            uv run python scripts/update_locations.py ${{ inputs.force && '--force' || '' }}
+          fi
+
+      - name: Validate generated JSON
+        run: uv run python scripts/validate_data.py
+
+      - name: Commit regenerated climatology
+        run: |
+          git config user.name  'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git add app/public/data
+          if git diff --cached --quiet; then
+            echo 'No climatology changes.'
+          else
+            git commit -m 'chore(data): rebuild climatology'
+            git push
+          fi
