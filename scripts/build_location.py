@@ -56,6 +56,19 @@ def write_index(locations: dict[str, Location]) -> None:
         )
 
     LOCATIONS_JSON.parent.mkdir(parents=True, exist_ok=True)
+
+    # Same reasoning as the location files: keep the old timestamp when nothing
+    # substantive changed, so a rebuild that finds no new data leaves the tree
+    # clean and the monthly workflow has nothing to commit.
+    if LOCATIONS_JSON.exists():
+        try:
+            existing = json.loads(LOCATIONS_JSON.read_text())
+        except json.JSONDecodeError:
+            existing = None
+        if existing is not None and existing.get("locations") == entries:
+            print(f"index: unchanged, {len(entries)} location(s)")
+            return
+
     LOCATIONS_JSON.write_text(
         json.dumps(
             {

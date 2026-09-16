@@ -14,6 +14,7 @@ import pytest
 
 from scripts.astro import NightWindow
 from scripts.build_climatology import (
+    _substantive,
     day_record,
     hour_of_night_block,
     hourly_long_frame,
@@ -200,3 +201,39 @@ class TestDayRecordMonotonicity:
         nights, long = self.build()
         assert day_record(1, nights, long, 7)["sample_count"] == 15 * 30
         assert day_record(365, nights, long, 7)["sample_count"] == 15 * 30
+
+
+class TestIdempotentWrite:
+    """A rebuild that finds no new data must leave the tree clean.
+
+    `generated_at` changes on every run, so without this the monthly workflow
+    would commit an empty change every month for the life of the project.
+    """
+
+    @staticmethod
+    def payload(generated_at: str, mean_cloud: float = 34.2) -> dict:
+        return {
+            "schema_version": 1,
+            "metadata": {
+                "id": "somewhere",
+                "baseline": {"start_year": 1996, "end_year": 2025},
+                "generated_at": generated_at,
+            },
+            "days": {"263": {"mean_cloud": mean_cloud}},
+        }
+
+    def test_timestamp_alone_is_not_a_change(self):
+        a = self.payload("2026-09-15T00:00:00Z")
+        b = self.payload("2026-10-01T12:34:56Z")
+        assert _substantive(a) == _substantive(b)
+
+    def test_real_data_changes_are_still_detected(self):
+        a = self.payload("2026-09-15T00:00:00Z", mean_cloud=34.2)
+        b = self.payload("2026-09-15T00:00:00Z", mean_cloud=34.3)
+        assert _substantive(a) != _substantive(b)
+
+    def test_the_timestamp_survives_for_the_provenance_panel(self):
+        # Stripping it for comparison must not strip it from what gets written.
+        original = self.payload("2026-09-15T00:00:00Z")
+        _substantive(original)
+        assert original["metadata"]["generated_at"] == "2026-09-15T00:00:00Z"

@@ -308,12 +308,34 @@ def build_climatology(
 # ---------------------------------------------------------------------------
 
 
+def _substantive(payload: dict) -> dict:
+    """The payload minus its generation timestamp.
+
+    `generated_at` changes on every run, so comparing raw payloads would call
+    every rebuild a change. The monthly workflow commits whatever differs, and
+    without this it would push an empty commit every month for the life of the
+    project.
+    """
+    metadata = {k: v for k, v in payload["metadata"].items() if k != "generated_at"}
+    return {**payload, "metadata": metadata}
+
+
 def build(loc: Location, start_year: int, end_year: int, window_days: int) -> Path:
     print(f"{loc.id}: {start_year}-{end_year}, window +/-{window_days}d")
     nights = build_nights(loc, start_year, end_year)
     payload = build_climatology(loc, nights, start_year, end_year, window_days)
 
     loc.json_path.parent.mkdir(parents=True, exist_ok=True)
+
+    if loc.json_path.exists():
+        try:
+            existing = json.loads(loc.json_path.read_text())
+        except json.JSONDecodeError:
+            existing = None
+        if existing is not None and _substantive(existing) == _substantive(payload):
+            print(f"  unchanged, keeping {loc.json_path.name}")
+            return loc.json_path
+
     loc.json_path.write_text(json.dumps(payload, separators=(",", ":")))
     size_kb = loc.json_path.stat().st_size / 1024
     print(f"  wrote {loc.json_path.relative_to(Path.cwd())} ({size_kb:.0f} KB)")
