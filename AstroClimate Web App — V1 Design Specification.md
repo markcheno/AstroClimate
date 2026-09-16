@@ -207,6 +207,7 @@ astroclimate/
 ├── scripts/
 │   ├── __init__.py
 │   ├── common.py            shared conventions and config
+│   ├── astro.py             twilight boundaries via Astronomy Engine
 │   ├── fetch_history.py     Open-Meteo -> cache/<id>/<year>.parquet
 │   ├── build_climatology.py nights, then day-of-year aggregation
 │   ├── build_location.py    fetch + build for one location
@@ -221,7 +222,8 @@ astroclimate/
 │
 ├── tests/
 │   ├── conftest.py
-│   └── test_conventions.py
+│   ├── test_conventions.py
+│   └── test_climatology.py
 │
 ├── pyproject.toml
 │

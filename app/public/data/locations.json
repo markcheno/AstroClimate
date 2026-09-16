@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-09-16T01:01:42Z",
+  "locations": [
+    {
+      "id": "schererville-in",
+      "name": "Schererville, Indiana",
+      "label_short": "Schererville",
+      "latitude": 41.4789,
+      "longitude": -87.4548,
+      "elevation_m": 200.0,
+      "timezone": "America/Chicago",
+      "file": "locations/schererville-in.json",
+      "bytes": 252433
+    }
+  ]
+}
