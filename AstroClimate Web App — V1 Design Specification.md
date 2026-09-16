@@ -894,6 +894,14 @@ Astronomical darkness
 
 This is likely to become the signature visualization of the application.
 
+### One y-axis
+
+Everything overlaid on this chart is on the same 0–100 scale — the score and the
+probability series. Wind (m/s) and darkness (hours) are **not** overlaid here.
+Two y-scales on one plot is the most misleading thing a chart can do: the reader
+sees two lines crossing and infers a relationship that is an artifact of the
+scaling. Those metrics get their own small multiples instead.
+
 ---
 
 # 18. Calendar Heatmap
@@ -993,6 +1001,16 @@ Two consequences for the UI:
   early-evening bins in June are genuinely thin
 - "best portion of night" is the highest-scoring **contiguous run** of bins, not
   the single best bin — §1's "1–4 AM" is a range for a reason
+- the range is withheld entirely unless the best and worst bins differ by more
+  than three standard errors
+
+That last point is not hypothetical. Schererville runs about 46% clear at its
+best hour against 40% at its worst — a six-point spread over 450 nights, where
+three standard errors is roughly eight points. **There is no clearest part of
+the night here.** The UI says so rather than naming a range, because this
+feature's appeal is exactly what makes it dangerous: a confident-looking
+"1–3 AM is clearest" is worth nothing if it is reporting sampling noise.
+Locations with a real diurnal signal will still show one.
 
 ---
 
